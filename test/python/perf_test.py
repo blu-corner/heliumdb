@@ -44,6 +44,16 @@ def int_iters(x, iterations, batch=None):
         x[i] = i
 
 
+def string_read_benchmark(x, iterations):
+    for i in range(iterations):
+        y = x[str(i)]
+
+
+def read_benchmark(x, iterations):
+    for i in range(iterations):
+        y = x[i]
+
+
 def dictionary_baseline(iterations, string=False):
     x = {}
 
@@ -54,7 +64,18 @@ def dictionary_baseline(iterations, string=False):
         int_iters(x, iterations)
     end = time.time()
 
-    return (end - start)
+    write = (end - start)
+
+    start = time.time()
+    if string:
+        string_read_benchmark(x, iterations)
+    else:
+        read_benchmark(x, iterations)
+    end = time.time()
+
+    read = (end - start)
+
+    return (write, read)
 
 
 def helium_benchmark(iterations, key_type='O',
@@ -79,9 +100,20 @@ def helium_benchmark(iterations, key_type='O',
     hdb.commit()
     end = time.time()
 
+    write = end - start
+
+    rstart = time.time()
+    if string:
+        string_read_benchmark(hdb, iterations)
+    else:
+        read_benchmark(hdb, iterations)
+    rend = time.time()
+
+
     cleanup(hdb, '/tmp/test-obj')
 
-    return (end - start)
+    x = (write, rend - rstart)
+    return x
 
 
 if len(sys.argv) != 2:
@@ -90,26 +122,25 @@ if len(sys.argv) != 2:
 
 iterations = int(sys.argv[1])
 
-baseline = dictionary_baseline(iterations)
-pickle = helium_benchmark(iterations)
-typed = helium_benchmark(iterations, key_type='i', val_type='i')
-batched = helium_benchmark(iterations, key_type='i', val_type='i', batch=1024)
+baseline_w, baseline_r= dictionary_baseline(iterations)
+pickle_w, pickle_r = helium_benchmark(iterations)
+typed_w, typed_r = helium_benchmark(iterations, key_type='i', val_type='i')
+batched_w, batched_r = helium_benchmark(iterations, key_type='i', val_type='i', batch=1024)
 
-print('{0} {1:^20} {2}'.format('-' * 10, 'integer results', '-' * 10))
-print('dictionary baseline       -> {0:.09f}'.format(baseline))
-print('helium typed object       -> {0:.09f}'.format(typed))
-print('helium pickled object     -> {0:.09f}'.format(pickle))
-print('helium typed 1024 batch   -> {0:.09f}'.format(batched))
+print('{0} {1:^20} {2}'.format('-' * 10, 'integer results (write/read)', '-' * 10))
+print('dictionary baseline       -> {0:.09f}/{1:.09f}'.format(baseline_w, baseline_r))
+print('helium typed object       -> {0:.09f}/{1:.09f}'.format(typed_w, typed_r))
+print('helium pickled object     -> {0:.09f}/{1:.09f}'.format(pickle_w, pickle_r))
+print('helium typed 1024 batch   -> {0:.09f}/{1:.09f}'.format(batched_w, batched_r))
 
-baseline = dictionary_baseline(iterations, string=True)
-pickle = helium_benchmark(iterations, string=True)
-typed = helium_benchmark(iterations, key_type='s', val_type='s',
-                         string=True)
-batched = helium_benchmark(iterations, key_type='s', val_type='s',
-                           string=True, batch=1024)
-
-print('{0} {1:^20} {2}'.format('-' * 10, 'string results', '-' * 10))
-print('dictionary baseline       -> {0:.09f}'.format(baseline))
-print('helium typed object       -> {0:.09f}'.format(typed))
-print('helium pickled object     -> {0:.09f}'.format(pickle))
-print('helium typed 1024 batch   -> {0:.09f}'.format(batched))
+baseline_w, baseline_r = dictionary_baseline(iterations, string=True)
+pickle_w, pickle_r = helium_benchmark(iterations, string=True)
+typed_w, typed_r = helium_benchmark(iterations, key_type='s', val_type='s',
+                                    string=True)
+batched_w, batched_r = helium_benchmark(iterations, key_type='s', val_type='s',
+                                        string=True, batch=1024)
+print('{0} {1:^20} {2}'.format('-' * 10, 'string results (write/read)', '-' * 10))
+print('dictionary baseline       -> {0:.09f}/{1:.09f}'.format(baseline_w, baseline_r))
+print('helium typed object       -> {0:.09f}/{1:.09f}'.format(typed_w, typed_r))
+print('helium pickled object     -> {0:.09f}/{1:.09f}'.format(pickle_w, pickle_r))
+print('helium typed 1024 batch   -> {0:.09f}/{1:.09f}'.format(batched_w, batched_r))
