@@ -1,7 +1,7 @@
 #
 # Copyright 2014-2018 Neueda Ltd.
 #
-from heliumdb import Heliumdb
+from heliumdb import Heliumdb, HE_O_CREATE, HE_O_VOLUME_CREATE
 import unittest
 import os
 
@@ -9,10 +9,12 @@ import os
 class TestInt(unittest.TestCase):
     def setUp(self):
         os.system('truncate -s 2g /tmp/test-int')
+        flags = HE_O_CREATE | HE_O_VOLUME_CREATE
         self.hdb = Heliumdb(url="he://.//tmp/test-int",
                             datastore='helium',
                             key_type='i',
-                            val_type='i')
+                            val_type='i',
+                            flags=flags)
 
     def tearDown(self):
         self.hdb.cleanup()
