@@ -16,8 +16,9 @@ static struct module_state _state;
 
 #define DEFERRED_ADDRESS(ADDR) 0
 
+template <class T>
 static void
-setEnvVariable (PyObject* kwargs, const char* param, uint64_t val, uint64_t& o)
+setEnvVariable (PyObject* kwargs, const char* param, T val, T& o)
 {
     PyObject* k = PyUnicode_FromString (param);
     if (PyDict_Contains (kwargs, k) == 1)
@@ -46,6 +47,7 @@ heliumdbPy_init (heliumdbPy* self, PyObject* args, PyObject* kwargs)
     char* val_type = NULL;
     
     uint64_t fanout;
+    int32_t flags = 0;
     uint64_t gc_fanout;
     uint64_t write_cache;
     uint64_t read_cache;
@@ -62,6 +64,7 @@ heliumdbPy_init (heliumdbPy* self, PyObject* args, PyObject* kwargs)
                       (char*)"key_type",
                       (char*)"val_type",
                       (char*)"fanout",
+                      (char*)"flags",
                       (char*)"gc_fanout",
                       (char*)"write_cache",
                       (char*)"read_cache",
@@ -76,13 +79,14 @@ heliumdbPy_init (heliumdbPy* self, PyObject* args, PyObject* kwargs)
 
     if (!PyArg_ParseTupleAndKeywords(args,
                                      kwargs,
-                                     "|ssssKKKKKKKKKK",
+                                     "|ssssKKKKKKKKKKK",
                                      kwlist,
                                      &url,
                                      &datastore,
                                      &key_type,
                                      &val_type,
                                      &fanout,
+                                     &flags,
                                      &gc_fanout,
                                      &write_cache,
                                      &read_cache,
@@ -124,8 +128,7 @@ heliumdbPy_init (heliumdbPy* self, PyObject* args, PyObject* kwargs)
 
     if (self->mDatastore == NULL)
     {
-        int options = HE_O_VOLUME_CREATE | HE_O_CREATE;
-        self->mDatastore = he_open (url, datastore, options, &env);
+        self->mDatastore = he_open (url, datastore, flags, &env);
         if (!self->mDatastore)
         {
             PyErr_SetString (HeliumDbException, he_strerror (errno));
@@ -804,6 +807,18 @@ initheliumdb (void)
     HeliumDbException = PyErr_NewException ("heliumdb.HeliumdbException", NULL, NULL);
     Py_INCREF (HeliumDbException);
     PyModule_AddObject (m, "HeliumdbException", HeliumDbException);
+
+    PyModule_AddIntConstant (m, "HE_O_CREATE", 1);
+    PyModule_AddIntConstant (m, "HE_O_TRUNCATE", 2);
+    PyModule_AddIntConstant (m, "HE_O_VOLUME_CREATE", 4);
+    PyModule_AddIntConstant (m, "HE_O_VOLUME_TRUNCATE", 8);
+    PyModule_AddIntConstant (m, "HE_O_VOLUME_NOTRIM", 16);
+    PyModule_AddIntConstant (m, "HE_O_NOSORT", 32);
+    PyModule_AddIntConstant (m, "HE_O_SCAN", 64);
+    PyModule_AddIntConstant (m, "HE_O_CLEAN", 128);
+    PyModule_AddIntConstant (m, "HE_O_COMPRESS", 256);
+    PyModule_AddIntConstant (m, "HE_O_READONLY", 512);
+    PyModule_AddIntConstant (m, "HE_O_ERR_EXISTS", 1024);
 
 #if PY_MAJOR_VERSION >= 3
     return m;
