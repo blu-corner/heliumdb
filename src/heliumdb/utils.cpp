@@ -138,7 +138,7 @@ serializeString (PyObject* o, void*& v, size_t& l)
     // the py2 unicode api is quite restricted so reverting to
     // string object for py2
     char* res;
-    if (PyString_AsStringAndSize (o, &res, objLen) == -1)
+    if (PyString_AsStringAndSize (o, &res, &objLen) == -1)
         return false;
 #endif
 
