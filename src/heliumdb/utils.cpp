@@ -11,11 +11,17 @@ pickleDumps (PyObject* obj)
     if (PICKLE_MODULE == NULL &&
         (PICKLE_MODULE = PyImport_ImportModuleNoBlock ("pickle")) == NULL)
         return NULL;
+	PyObject* method_name = PyUnicode_FromString("dumps");
 
-    return PyObject_CallMethodObjArgs (PICKLE_MODULE,
-                                       PyUnicode_FromString ("dumps"),
+    PyObject* res =  PyObject_CallMethodObjArgs (PICKLE_MODULE,
+                                       method_name,
                                        obj,
                                        NULL);
+	while (method_name->ob_refcnt > 0) {
+		
+		Py_DECREF(method_name);
+	}
+	return res;
 }
 
 
@@ -38,14 +44,16 @@ bool
 serializeObject (PyObject* o, void*& v, size_t& l)
 {
     PyObject* pickledObj = pickleDumps (o);
-
+	//PyObject* pickledObj = PyBytes_FromString("[1,2,3,4,5]");
     char* obj;
     Py_ssize_t objLen;
+
 #if PY_MAJOR_VERSION >= 3
     if (PyBytes_AsStringAndSize (pickledObj, &obj, &objLen) == -1)
 #else
     if (PyString_AsStringAndSize (pickledObj, &obj, &objLen) == -1)
 #endif
+
     {
         printf ("failed to serialize object");
         return false;
@@ -53,6 +61,7 @@ serializeObject (PyObject* o, void*& v, size_t& l)
     
     v = (void*)obj;
     l = objLen;
+
 	Py_DECREF(pickledObj);
 
     return true;
