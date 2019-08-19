@@ -308,8 +308,7 @@ heliumdb_del (heliumdbPy* self, PyObject *args)
         {
             break;
         }
-    }
-
+    }	
     PyObject* obj = self->mKeyDeserializer (item.val, item.val_len);
     if (obj == NULL)
     {
@@ -335,7 +334,6 @@ heliumdb_ass_sub (heliumdbPy* self, PyObject* k, PyObject* v)
         PyErr_SetString (HeliumDbException, "could not serialize key object");
         return -1;
     }
-
     if (v == NULL)
     {
         // delete
@@ -369,7 +367,6 @@ heliumdb_ass_sub (heliumdbPy* self, PyObject* k, PyObject* v)
         PyErr_SetString (HeliumDbException, err);
         return -1;
     }
-
     return 0;
 }
 
@@ -414,8 +411,7 @@ heliumdb_subscript (heliumdbPy* self, PyObject* k)
         {
             break;
         }
-    }
-
+    }	
     PyObject* obj = self->mValDeserializer (getItem.val, getItem.val_len);
     if (obj == NULL)
     {

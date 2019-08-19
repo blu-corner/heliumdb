@@ -17,8 +17,8 @@ pickleDumps (PyObject* obj)
                                        method_name,
                                        obj,
                                        NULL);
-	while (method_name->ob_refcnt > 0) {
-		
+	int num_to_run = method_name->ob_refcnt;
+	for (int i = 0; i < num_to_run; i++) {
 		Py_DECREF(method_name);
 	}
 	return res;
@@ -43,6 +43,7 @@ pickleLoads (const char* buf, size_t len)
 bool
 serializeObject (PyObject* o, void*& v, size_t& l)
 {
+
     PyObject* pickledObj = pickleDumps (o);
 	//PyObject* pickledObj = PyBytes_FromString("[1,2,3,4,5]");
     char* obj;
@@ -188,6 +189,9 @@ serializeBytes (PyObject* o, void*& v, size_t& l)
 PyObject*
 deserializeObject (void* buf, size_t len)
 {
+    if (PICKLE_MODULE == NULL &&
+        (PICKLE_MODULE = PyImport_ImportModuleNoBlock ("pickle")) == NULL)
+        return NULL;
     const char* d = reinterpret_cast <const char*> (buf);
 #if PY_MAJOR_VERSION >= 3
     PyObject* pickedByteObj = PyBytes_FromStringAndSize (d, len);
