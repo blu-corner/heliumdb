@@ -208,6 +208,7 @@ heliumdbPy_dealloc (heliumdbPy* self)
     he_close (self->mDatastore);
     Py_END_ALLOW_THREADS
     Py_TYPE (self)->tp_free((PyObject*)self);
+	
 }
 
 static PyObject*
@@ -354,13 +355,10 @@ heliumdb_ass_sub (heliumdbPy* self, PyObject* k, PyObject* v)
         }
         return 0;
     }
-
     if (!self->mValSerializer (v, item.val, item.val_len))
     {
         PyErr_SetString (HeliumDbException, "could not serialize value object");
-        return -1;
-    }
-
+	}
     Py_BEGIN_ALLOW_THREADS
     rc = he_update (self->mDatastore, &item);
     Py_END_ALLOW_THREADS
@@ -376,10 +374,11 @@ heliumdb_ass_sub (heliumdbPy* self, PyObject* k, PyObject* v)
 }
 
 
+static char   buffer[700000];
+
 PyObject*
 heliumdb_subscript (heliumdbPy* self, PyObject* k)
 {
-    char*   buffer[8096] = {0};
     size_t  rdSize = sizeof (buffer);
     void*   buf = NULL;
 
@@ -423,6 +422,7 @@ heliumdb_subscript (heliumdbPy* self, PyObject* k)
         PyErr_SetString (HeliumDbException, "failed to deserialize value object");
         return NULL;
     }
+
 
     if (buf)
         free (buf);

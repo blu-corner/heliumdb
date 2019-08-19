@@ -53,6 +53,7 @@ serializeObject (PyObject* o, void*& v, size_t& l)
     
     v = (void*)obj;
     l = objLen;
+	Py_DECREF(pickledObj);
 
     return true;
 }
@@ -67,7 +68,6 @@ serializeIntKey (PyObject* o, void*& v, size_t& l)
         PyErr_SetString (HeliumDbException, "value not an int");
         return false;
     }
-    
     res = PyLong_AsLongLong (o);
 
     v = &res;
@@ -185,11 +185,12 @@ deserializeObject (void* buf, size_t len)
 #else
     PyObject* pickedByteObj = PyString_FromStringAndSize (d, len);
 #endif
-
-    return PyObject_CallMethodObjArgs (PICKLE_MODULE,
+	PyObject* res = PyObject_CallMethodObjArgs (PICKLE_MODULE,
                                        PyUnicode_FromString("loads"),
                                        pickedByteObj,
                                        NULL);
+	Py_DECREF(pickedByteObj);
+	return res;
 }
 
 PyObject*
