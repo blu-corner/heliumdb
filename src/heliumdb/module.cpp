@@ -356,6 +356,7 @@ heliumdb_ass_sub (heliumdbPy* self, PyObject* k, PyObject* v)
     if (!self->mValSerializer (v, item.val, item.val_len))
     {
         PyErr_SetString (HeliumDbException, "could not serialize value object");
+		return -1;
 	}
     Py_BEGIN_ALLOW_THREADS
     rc = he_update (self->mDatastore, &item);

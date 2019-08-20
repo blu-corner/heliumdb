@@ -19,7 +19,7 @@ pickleDumps (PyObject* obj)
                                        NULL);
 	int num_to_run = method_name->ob_refcnt;
 	for (int i = 0; i < num_to_run; i++) {
-		Py_DECREF(method_name);
+		Py_DECREF (method_name);
 	}
 	return res;
 }
@@ -28,16 +28,20 @@ pickleDumps (PyObject* obj)
 PyObject*
 pickleLoads (const char* buf, size_t len)
 {
+    if (PICKLE_MODULE == NULL &&
+        (PICKLE_MODULE = PyImport_ImportModuleNoBlock ("pickle")) == NULL)
+        return NULL;
 #if PY_MAJOR_VERSION >= 3
     PyObject* pickedByteObj = PyBytes_FromStringAndSize (buf, len);
 #else
     PyObject* pickedByteObj = PyString_FromStringAndSize (buf, len);
 #endif
-
-    return PyObject_CallMethodObjArgs (PICKLE_MODULE,
+    PyObject* res = PyObject_CallMethodObjArgs (PICKLE_MODULE,
                                        PyUnicode_FromString("loads"),
                                        pickedByteObj,
                                        NULL);
+	Py_DECREF (pickedByteObj);
+	return res;
 }
 
 bool
@@ -45,7 +49,6 @@ serializeObject (PyObject* o, void*& v, size_t& l)
 {
 
     PyObject* pickledObj = pickleDumps (o);
-	//PyObject* pickledObj = PyBytes_FromString("[1,2,3,4,5]");
     char* obj;
     Py_ssize_t objLen;
 
@@ -189,20 +192,8 @@ serializeBytes (PyObject* o, void*& v, size_t& l)
 PyObject*
 deserializeObject (void* buf, size_t len)
 {
-    if (PICKLE_MODULE == NULL &&
-        (PICKLE_MODULE = PyImport_ImportModuleNoBlock ("pickle")) == NULL)
-        return NULL;
     const char* d = reinterpret_cast <const char*> (buf);
-#if PY_MAJOR_VERSION >= 3
-    PyObject* pickedByteObj = PyBytes_FromStringAndSize (d, len);
-#else
-    PyObject* pickedByteObj = PyString_FromStringAndSize (d, len);
-#endif
-	PyObject* res = PyObject_CallMethodObjArgs (PICKLE_MODULE,
-                                       PyUnicode_FromString("loads"),
-                                       pickedByteObj,
-                                       NULL);
-	Py_DECREF(pickedByteObj);
+	PyObject* res = pickleLoads (d, len);
 	return res;
 }
 
