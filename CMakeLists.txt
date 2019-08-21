@@ -24,7 +24,7 @@ include(${CMAKE_ROOT}/Modules/ExternalProject.cmake)
 include(${CMAKE_ROOT}/Modules/CheckIncludeFileCXX.cmake)
 
 execute_process(
-    COMMAND bash -c "${PYTHON_CONFIG} --include"
+    COMMAND bash -c "${PYTHON_CONFIG} --includes"
     OUTPUT_VARIABLE PYTHON_INCLUDE_PATH
     RESULT_VARIABLE RET
     )
