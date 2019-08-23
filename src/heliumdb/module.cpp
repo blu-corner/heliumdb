@@ -208,6 +208,7 @@ heliumdbPy_dealloc (heliumdbPy* self)
     he_close (self->mDatastore);
     Py_END_ALLOW_THREADS
     Py_TYPE (self)->tp_free((PyObject*)self);
+	
 }
 
 static PyObject*
@@ -258,14 +259,14 @@ heliumdb_get (heliumdbPy *self, PyObject *args)
 
     return heliumdb_subscript (self, k);
 }
-
+static char   buffer[700000];
 static PyObject*
 heliumdb_del (heliumdbPy* self, PyObject *args)
 {
     PyObject *k;
     PyObject *failobj = Py_None;
 
-    char* buffer[8096] = {0};
+//    char* buffer[8096] = {0};
     size_t rdSize = sizeof (buffer);
     void* buf = NULL;
 
@@ -307,8 +308,7 @@ heliumdb_del (heliumdbPy* self, PyObject *args)
         {
             break;
         }
-    }
-
+    }	
     PyObject* obj = self->mKeyDeserializer (item.val, item.val_len);
     if (obj == NULL)
     {
@@ -334,7 +334,6 @@ heliumdb_ass_sub (heliumdbPy* self, PyObject* k, PyObject* v)
         PyErr_SetString (HeliumDbException, "could not serialize key object");
         return -1;
     }
-
     if (v == NULL)
     {
         // delete
@@ -354,13 +353,11 @@ heliumdb_ass_sub (heliumdbPy* self, PyObject* k, PyObject* v)
         }
         return 0;
     }
-
     if (!self->mValSerializer (v, item.val, item.val_len))
     {
         PyErr_SetString (HeliumDbException, "could not serialize value object");
-        return -1;
-    }
-
+		return -1;
+	}
     Py_BEGIN_ALLOW_THREADS
     rc = he_update (self->mDatastore, &item);
     Py_END_ALLOW_THREADS
@@ -371,15 +368,15 @@ heliumdb_ass_sub (heliumdbPy* self, PyObject* k, PyObject* v)
         PyErr_SetString (HeliumDbException, err);
         return -1;
     }
-
     return 0;
 }
 
 
+static char   buffer[700000];
+
 PyObject*
 heliumdb_subscript (heliumdbPy* self, PyObject* k)
 {
-    char*   buffer[8096] = {0};
     size_t  rdSize = sizeof (buffer);
     void*   buf = NULL;
 
@@ -415,14 +412,14 @@ heliumdb_subscript (heliumdbPy* self, PyObject* k)
         {
             break;
         }
-    }
-
+    }	
     PyObject* obj = self->mValDeserializer (getItem.val, getItem.val_len);
     if (obj == NULL)
     {
         PyErr_SetString (HeliumDbException, "failed to deserialize value object");
         return NULL;
     }
+
 
     if (buf)
         free (buf);

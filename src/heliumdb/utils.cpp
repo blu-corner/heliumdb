@@ -11,41 +11,53 @@ pickleDumps (PyObject* obj)
     if (PICKLE_MODULE == NULL &&
         (PICKLE_MODULE = PyImport_ImportModuleNoBlock ("pickle")) == NULL)
         return NULL;
+	PyObject* method_name = PyUnicode_FromString("dumps");
 
-    return PyObject_CallMethodObjArgs (PICKLE_MODULE,
-                                       PyUnicode_FromString ("dumps"),
+    PyObject* res =  PyObject_CallMethodObjArgs (PICKLE_MODULE,
+                                       method_name,
                                        obj,
                                        NULL);
+	int num_to_run = method_name->ob_refcnt;
+	for (int i = 0; i < num_to_run; i++) {
+		Py_DECREF (method_name);
+	}
+	return res;
 }
 
 
 PyObject*
 pickleLoads (const char* buf, size_t len)
 {
+    if (PICKLE_MODULE == NULL &&
+        (PICKLE_MODULE = PyImport_ImportModuleNoBlock ("pickle")) == NULL)
+        return NULL;
 #if PY_MAJOR_VERSION >= 3
     PyObject* pickedByteObj = PyBytes_FromStringAndSize (buf, len);
 #else
     PyObject* pickedByteObj = PyString_FromStringAndSize (buf, len);
 #endif
-
-    return PyObject_CallMethodObjArgs (PICKLE_MODULE,
+    PyObject* res = PyObject_CallMethodObjArgs (PICKLE_MODULE,
                                        PyUnicode_FromString("loads"),
                                        pickedByteObj,
                                        NULL);
+	Py_DECREF (pickedByteObj);
+	return res;
 }
 
 bool
 serializeObject (PyObject* o, void*& v, size_t& l)
 {
-    PyObject* pickledObj = pickleDumps (o);
 
+    PyObject* pickledObj = pickleDumps (o);
     char* obj;
     Py_ssize_t objLen;
+
 #if PY_MAJOR_VERSION >= 3
     if (PyBytes_AsStringAndSize (pickledObj, &obj, &objLen) == -1)
 #else
     if (PyString_AsStringAndSize (pickledObj, &obj, &objLen) == -1)
 #endif
+
     {
         printf ("failed to serialize object");
         return false;
@@ -53,6 +65,8 @@ serializeObject (PyObject* o, void*& v, size_t& l)
     
     v = (void*)obj;
     l = objLen;
+
+	Py_DECREF(pickledObj);
 
     return true;
 }
@@ -67,7 +81,6 @@ serializeIntKey (PyObject* o, void*& v, size_t& l)
         PyErr_SetString (HeliumDbException, "value not an int");
         return false;
     }
-    
     res = PyLong_AsLongLong (o);
 
     v = &res;
@@ -180,16 +193,8 @@ PyObject*
 deserializeObject (void* buf, size_t len)
 {
     const char* d = reinterpret_cast <const char*> (buf);
-#if PY_MAJOR_VERSION >= 3
-    PyObject* pickedByteObj = PyBytes_FromStringAndSize (d, len);
-#else
-    PyObject* pickedByteObj = PyString_FromStringAndSize (d, len);
-#endif
-
-    return PyObject_CallMethodObjArgs (PICKLE_MODULE,
-                                       PyUnicode_FromString("loads"),
-                                       pickedByteObj,
-                                       NULL);
+	PyObject* res = pickleLoads (d, len);
+	return res;
 }
 
 PyObject*
