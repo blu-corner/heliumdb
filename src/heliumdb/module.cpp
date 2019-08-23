@@ -259,14 +259,14 @@ heliumdb_get (heliumdbPy *self, PyObject *args)
 
     return heliumdb_subscript (self, k);
 }
-
+static char   buffer[700000];
 static PyObject*
 heliumdb_del (heliumdbPy* self, PyObject *args)
 {
     PyObject *k;
     PyObject *failobj = Py_None;
 
-    char* buffer[8096] = {0};
+//    char* buffer[8096] = {0};
     size_t rdSize = sizeof (buffer);
     void* buf = NULL;
 
