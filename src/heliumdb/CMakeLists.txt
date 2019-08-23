@@ -9,4 +9,4 @@ target_link_libraries(heliumdb ${LIBHE})
 set_target_properties (heliumdb PROPERTIES PREFIX "")
 set_target_properties (heliumdb PROPERTIES SUFFIX ".so")
 
-install (TARGETS heliumdb DESTINATION lib/python)
+install (TARGETS heliumdb DESTINATION src/heliumdb)
