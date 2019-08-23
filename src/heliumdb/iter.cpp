@@ -32,8 +32,6 @@ heliumdb_itervalues (heliumdbPy* h)
         return NULL;
     }
 
-    _PyObject_GC_TRACK(hitr);
-
     return (PyObject*)hitr;
 }
 
@@ -58,8 +56,6 @@ heliumdb_iteritems (heliumdbPy* h)
         return NULL;
     }
 
-    _PyObject_GC_TRACK(hitr);
-
     return (PyObject*)hitr;
 }
 
@@ -83,8 +79,6 @@ heliumdb_iter (heliumdbPy* h)
         PyErr_SetString (HeliumDbException, "failed to open iterator");
         return NULL;
     }
-
-    _PyObject_GC_TRACK(hitr);
 
     return (PyObject*)hitr;
 }
