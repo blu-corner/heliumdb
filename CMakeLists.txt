@@ -43,6 +43,7 @@ if(NOT ${RET} EQUAL "0")
     message(FATAL_ERROR "failed to run python-config")
 endif()
 
+string(STRIP "${PYTHON_LDFLAGS}" PYTHON_LDFLAGS)
 string(REGEX REPLACE "\n$" "" PYTHON_LDFLAGS "${PYTHON_LDFLAGS}")
 string(REGEX REPLACE "\n$" "" PYTHON_INCLUDE_PATH "${PYTHON_INCLUDE_PATH}")
 
