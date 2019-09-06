@@ -19,7 +19,7 @@ extern PyTypeObject heliumdbIterItemType;
 
 extern PyTypeObject heliumdbIterValuesType;
 
-typedef bool (*serializer) (PyObject*, void*&, size_t&);
+typedef bool (*serializer) (PyObject*, void*&, size_t&, PyObject*&);
 
 typedef PyObject* (*deserializer) (void*, size_t);
 

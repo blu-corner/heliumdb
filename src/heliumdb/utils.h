@@ -11,13 +11,13 @@ bool serializeKeyObject (PyObject* k, he_item& item);
 
 bool serializeValueObject (PyObject* k, he_item& item);
 
-bool serializeObject (PyObject* o, void*& v, size_t& l);
-bool serializeIntKey (PyObject* o, void*& v, size_t& l);
-bool serializeIntVal (PyObject* o, void*& v, size_t& l);
-bool serializeString (PyObject* o, void*& v, size_t& l);
-bool serializeFloatKey (PyObject* o, void*& v, size_t& l);
-bool serializeFloatVal (PyObject* o, void*& v, size_t& l);
-bool serializeBytes (PyObject* o, void*& v, size_t& l);
+bool serializeObject (PyObject* o, void*& v, size_t& l, PyObject*& obj);
+bool serializeIntKey (PyObject* o, void*& v, size_t& l, PyObject*& obj);
+bool serializeIntVal (PyObject* o, void*& v, size_t& l, PyObject*& obj);
+bool serializeString (PyObject* o, void*& v, size_t& l, PyObject*& obj);
+bool serializeFloatKey (PyObject* o, void*& v, size_t& l, PyObject*& obj);
+bool serializeFloatVal (PyObject* o, void*& v, size_t& l, PyObject*& obj);
+bool serializeBytes (PyObject* o, void*& v, size_t& l, PyObject*& obj);
 
 PyObject* deserializeObject (void* v, size_t l);
 PyObject* deserializeInt (void* v, size_t l);

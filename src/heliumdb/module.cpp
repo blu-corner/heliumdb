@@ -29,12 +29,15 @@ PyObject*
 heliumdb_contains (heliumdbPy* self, PyObject* k)
 {
     he_item item;
-    if (!self->mKeySerializer (k, item.key, item.key_len))
+    PyObject *pickleObj = NULL;
+    if (!self->mKeySerializer (k, item.key, item.key_len, pickleObj))
     {
         PyErr_SetString (HeliumDbException, "could not serialize key object");
+        if (pickleObj != NULL) Py_DECREF(pickleObj);
         return NULL;
     }
 
+    if (pickleObj != NULL) Py_DECREF(pickleObj);
     return PyBool_FromLong (he_exists (self->mDatastore, &item) == 0);
 }
 
@@ -208,7 +211,6 @@ heliumdbPy_dealloc (heliumdbPy* self)
     he_close (self->mDatastore);
     Py_END_ALLOW_THREADS
     Py_TYPE (self)->tp_free((PyObject*)self);
-	
 }
 
 static PyObject*
@@ -234,12 +236,16 @@ heliumdb_get (heliumdbPy *self, PyObject *args)
     PyObject *k = NULL;
     PyObject *failobj = NULL;
 
+    PyObject *pickleObj = NULL;
+
     if (!PyArg_UnpackTuple (args, "get", 1, 2, &k, &failobj))
         return NULL; 
 
     he_item item;
-    if (!self->mKeySerializer (k, item.key, item.key_len))
+    if (!self->mKeySerializer (k, item.key, item.key_len, pickleObj)) {
+        if (pickleObj != NULL) Py_DECREF(pickleObj);
         return NULL;
+    }
 
     int rc;
     Py_BEGIN_ALLOW_THREADS
@@ -251,22 +257,27 @@ heliumdb_get (heliumdbPy *self, PyObject *args)
         if (failobj == NULL)
         {
             PyErr_SetString (HeliumDbException, "key not found");
+            if (pickleObj != NULL) Py_DECREF(pickleObj);
             return NULL;
         }
         Py_INCREF (failobj);
+        if (pickleObj != NULL) Py_DECREF(pickleObj);
         return failobj;
     }
 
+    if (pickleObj != NULL) Py_DECREF(pickleObj);
+
     return heliumdb_subscript (self, k);
 }
-static char   buffer[700000];
+
 static PyObject*
 heliumdb_del (heliumdbPy* self, PyObject *args)
 {
     PyObject *k;
     PyObject *failobj = Py_None;
+    PyObject *pickleObj = NULL;
 
-//    char* buffer[8096] = {0};
+    char* buffer[8096] = {0};
     size_t rdSize = sizeof (buffer);
     void* buf = NULL;
 
@@ -277,9 +288,10 @@ heliumdb_del (heliumdbPy* self, PyObject *args)
     }
  
     he_item item;
-    if (!self->mKeySerializer (k, item.key, item.key_len))
+    if (!self->mKeySerializer (k, item.key, item.key_len, pickleObj))
     {
         PyErr_SetString (HeliumDbException, "could not serialize key object");
+        if (pickleObj != NULL) Py_DECREF(pickleObj);
         return NULL;
     }
     item.val = (void*)buffer;
@@ -295,6 +307,7 @@ heliumdb_del (heliumdbPy* self, PyObject *args)
         {
             PyErr_SetString (HeliumDbException, he_strerror (errno));
             Py_INCREF (failobj);
+            if (pickleObj != NULL) Py_DECREF(pickleObj);
             return failobj;
         }
         if (item.val_len > rdSize)
@@ -308,16 +321,20 @@ heliumdb_del (heliumdbPy* self, PyObject *args)
         {
             break;
         }
-    }	
+    }
+
     PyObject* obj = self->mKeyDeserializer (item.val, item.val_len);
     if (obj == NULL)
     {
         PyErr_SetString (HeliumDbException, "failed to deserialize key object");
+        if (pickleObj != NULL) Py_DECREF(pickleObj);
         return NULL;
     }
 
     if (buf)
         free (buf);
+
+    if (pickleObj != NULL) Py_DECREF(pickleObj);
 
     return obj;
 }
@@ -328,12 +345,16 @@ heliumdb_ass_sub (heliumdbPy* self, PyObject* k, PyObject* v)
     char err[128];
     he_item item;
     int rc;
+    PyObject *pickleObj = NULL;
+    PyObject *pickleObjVal = NULL;
 
-    if (!self->mKeySerializer (k, item.key, item.key_len))
+    if (!self->mKeySerializer (k, item.key, item.key_len, pickleObj))
     {
         PyErr_SetString (HeliumDbException, "could not serialize key object");
+        if (pickleObj != NULL) Py_DECREF(pickleObj);
         return -1;
     }
+
     if (v == NULL)
     {
         // delete
@@ -349,15 +370,20 @@ heliumdb_ass_sub (heliumdbPy* self, PyObject* k, PyObject* v)
         {
             snprintf (err, 128, "he_delete_lookup failed: %s", he_strerror (errno));
             PyErr_SetString (HeliumDbException, err);
+            if (pickleObj != NULL) Py_DECREF(pickleObj);
             return -1;
         }
         return 0;
     }
-    if (!self->mValSerializer (v, item.val, item.val_len))
+
+    if (!self->mValSerializer (v, item.val, item.val_len, pickleObjVal))
     {
         PyErr_SetString (HeliumDbException, "could not serialize value object");
-		return -1;
-	}
+        if (pickleObj != NULL) Py_DECREF(pickleObj);
+        if (pickleObjVal != NULL) Py_DECREF(pickleObjVal);
+        return -1;
+    }
+
     Py_BEGIN_ALLOW_THREADS
     rc = he_update (self->mDatastore, &item);
     Py_END_ALLOW_THREADS
@@ -366,26 +392,39 @@ heliumdb_ass_sub (heliumdbPy* self, PyObject* k, PyObject* v)
     {
         snprintf (err, 128, "he_update failed: %s", he_strerror (errno));
         PyErr_SetString (HeliumDbException, err);
+        if (pickleObj != NULL) Py_DECREF(pickleObj);
+        if (pickleObjVal != NULL) Py_DECREF(pickleObjVal);
         return -1;
     }
+
+    if (pickleObj != NULL) {
+        //printf("pickleObj refcount: %ld\n", Py_REFCNT(pickleObj));
+        Py_DECREF(pickleObj);
+    }
+    if (pickleObjVal != NULL) {
+        //printf("pickleObjVal refcount: %ld\n", Py_REFCNT(pickleObjVal));
+        Py_DECREF(pickleObjVal);
+    }
+
     return 0;
 }
 
 
-static char   buffer[700000];
-
 PyObject*
 heliumdb_subscript (heliumdbPy* self, PyObject* k)
 {
+    char*   buffer[8096] = {0};
     size_t  rdSize = sizeof (buffer);
     void*   buf = NULL;
+    PyObject *pickleObj;
 
     he_item getItem;
     getItem.val = (void*)buffer;
 
-    if (!self->mKeySerializer (k, getItem.key, getItem.key_len))
+    if (!self->mKeySerializer (k, getItem.key, getItem.key_len, pickleObj))
     {
         PyErr_SetString (HeliumDbException, "could not serialize key object");
+        if (pickleObj != NULL) Py_DECREF(pickleObj);
         return NULL;
     }
 
@@ -399,6 +438,7 @@ heliumdb_subscript (heliumdbPy* self, PyObject* k)
         if (rc != 0)
         {
             PyErr_SetString (HeliumDbException, "he_lookup failed");
+            if (pickleObj != NULL) Py_DECREF(pickleObj);
             return NULL;
         }
 
@@ -412,17 +452,20 @@ heliumdb_subscript (heliumdbPy* self, PyObject* k)
         {
             break;
         }
-    }	
+    }
+
     PyObject* obj = self->mValDeserializer (getItem.val, getItem.val_len);
     if (obj == NULL)
     {
         PyErr_SetString (HeliumDbException, "failed to deserialize value object");
+        if (pickleObj != NULL) Py_DECREF(pickleObj);
         return NULL;
     }
 
-
     if (buf)
         free (buf);
+
+    if (pickleObj != NULL) Py_DECREF(pickleObj);
 
     return obj;
 }
