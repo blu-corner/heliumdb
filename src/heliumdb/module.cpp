@@ -343,7 +343,7 @@ heliumdb_ass_sub (heliumdbPy* self, PyObject* k, PyObject* v)
         item.val_len = sizeof (buffer);
 
         Py_BEGIN_ALLOW_THREADS
-        rc = he_delete_lookup (self->mDatastore, &item, 0, 1024);
+        rc = he_delete_lookup (self->mDatastore, &item, 0, sizeof (buffer));
         Py_END_ALLOW_THREADS
 
         if (rc != 0)
